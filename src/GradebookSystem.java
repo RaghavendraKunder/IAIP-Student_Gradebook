@@ -1,6 +1,5 @@
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.*;
 import java.util.*;
 
 class Student {
@@ -19,7 +18,7 @@ class Student {
     }
 
     double getAverage() {
-        if (subjects.size() == 0) return 0;
+        if (subjects.isEmpty()) return 0;
         int sum = 0;
         for (int m : subjects.values()) sum += m;
         return (double) sum / subjects.size();
@@ -32,10 +31,10 @@ class Student {
         sb.append("Subjects:\n");
 
         for (Map.Entry<String, Integer> e : subjects.entrySet()) {
-            sb.append(e.getKey()).append(": ").append(e.getValue()).append("\n");
+            sb.append("  ").append(e.getKey()).append(": ").append(e.getValue()).append("\n");
         }
 
-        sb.append("Average: ").append(getAverage()).append("\n");
+        sb.append("Average: ").append(String.format("%.2f", getAverage())).append("\n");
         return sb.toString();
     }
 }
@@ -48,40 +47,84 @@ public class GradebookSystem extends JFrame {
     JTextArea outputArea;
 
     public GradebookSystem() {
-        setTitle("Student Gradebook");
-        setSize(500, 500);
-        setLayout(new FlowLayout());
+        setTitle("📘 Student Gradebook");
+        setSize(600, 500);
+        setLayout(new BorderLayout());
         setDefaultCloseOperation(EXIT_ON_CLOSE);
 
-        idField = new JTextField(10);
-        nameField = new JTextField(10);
-        subjectField = new JTextField(10);
-        marksField = new JTextField(5);
+        // ===== COLORS =====
+        Color bgColor = new Color(240, 248, 255); // light blue
+        Color panelColor = new Color(220, 235, 250);
+        Color buttonColor = new Color(70, 130, 180); // steel blue
+        Color textColor = Color.WHITE;
 
-        JButton addStudentBtn = new JButton("Add Student");
-        JButton addGradeBtn = new JButton("Add Grade");
-        JButton viewBtn = new JButton("View Student");
-        JButton deleteBtn = new JButton("Delete Student");
-        JButton viewAllBtn = new JButton("View All");
+        getContentPane().setBackground(bgColor);
 
-        outputArea = new JTextArea(15, 40);
+        // ===== TITLE =====
+        JLabel title = new JLabel("Student Gradebook System", JLabel.CENTER);
+        title.setFont(new Font("Arial", Font.BOLD, 22));
+        title.setOpaque(true);
+        title.setBackground(new Color(100, 149, 237));
+        title.setForeground(Color.WHITE);
+        title.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        add(title, BorderLayout.NORTH);
+
+        // ===== CENTER PANEL =====
+        JPanel centerPanel = new JPanel(new GridLayout(2, 1, 10, 10));
+        centerPanel.setBackground(bgColor);
+
+        // INPUT PANEL
+        JPanel inputPanel = new JPanel(new GridLayout(4, 2, 10, 10));
+        inputPanel.setBackground(panelColor);
+        inputPanel.setBorder(BorderFactory.createTitledBorder("Enter Details"));
+
+        idField = new JTextField();
+        nameField = new JTextField();
+        subjectField = new JTextField();
+        marksField = new JTextField();
+
+        inputPanel.add(new JLabel("Student ID:"));
+        inputPanel.add(idField);
+        inputPanel.add(new JLabel("Name:"));
+        inputPanel.add(nameField);
+        inputPanel.add(new JLabel("Subject:"));
+        inputPanel.add(subjectField);
+        inputPanel.add(new JLabel("Marks:"));
+        inputPanel.add(marksField);
+
+        // BUTTON PANEL
+        JPanel buttonPanel = new JPanel(new GridLayout(2, 3, 10, 10));
+        buttonPanel.setBackground(panelColor);
+        buttonPanel.setBorder(BorderFactory.createTitledBorder("Actions"));
+
+        JButton addStudentBtn = createStyledButton("Add Student", buttonColor, textColor);
+        JButton addGradeBtn = createStyledButton("Add Grade", buttonColor, textColor);
+        JButton viewBtn = createStyledButton("View Student", buttonColor, textColor);
+        JButton deleteBtn = createStyledButton("Delete Student", buttonColor, textColor);
+        JButton viewAllBtn = createStyledButton("View All", buttonColor, textColor);
+
+        buttonPanel.add(addStudentBtn);
+        buttonPanel.add(addGradeBtn);
+        buttonPanel.add(viewBtn);
+        buttonPanel.add(deleteBtn);
+        buttonPanel.add(viewAllBtn);
+
+        centerPanel.add(inputPanel);
+        centerPanel.add(buttonPanel);
+        add(centerPanel, BorderLayout.CENTER);
+
+        // ===== OUTPUT =====
+        outputArea = new JTextArea();
+        outputArea.setFont(new Font("Monospaced", Font.PLAIN, 14));
         outputArea.setEditable(false);
+        outputArea.setBackground(Color.WHITE);
 
-        add(new JLabel("ID:")); add(idField);
-        add(new JLabel("Name:")); add(nameField);
-        add(addStudentBtn);
+        JScrollPane scrollPane = new JScrollPane(outputArea);
+        scrollPane.setBorder(BorderFactory.createTitledBorder("Output"));
 
-        add(new JLabel("Subject:")); add(subjectField);
-        add(new JLabel("Marks:")); add(marksField);
-        add(addGradeBtn);
+        add(scrollPane, BorderLayout.SOUTH);
 
-        add(viewBtn);
-        add(deleteBtn);
-        add(viewAllBtn);
-
-        add(new JScrollPane(outputArea));
-
-        // BUTTON ACTIONS
+        // ===== ACTIONS =====
 
         addStudentBtn.addActionListener(e -> {
             try {
@@ -89,9 +132,9 @@ public class GradebookSystem extends JFrame {
                 String name = nameField.getText();
 
                 students.add(new Student(id, name));
-                outputArea.setText("Student added successfully!");
+                outputArea.setText("✅ Student added successfully!");
             } catch (Exception ex) {
-                outputArea.setText("Invalid input!");
+                outputArea.setText("❌ Invalid input!");
             }
         });
 
@@ -105,49 +148,69 @@ public class GradebookSystem extends JFrame {
 
                 if (s != null) {
                     s.addSubject(subject, marks);
-                    outputArea.setText("Grade added!");
+                    outputArea.setText("✅ Grade added!");
                 } else {
-                    outputArea.setText("Student not found!");
+                    outputArea.setText("❌ Student not found!");
                 }
             } catch (Exception ex) {
-                outputArea.setText("Invalid input!");
+                outputArea.setText("❌ Invalid input!");
             }
         });
 
         viewBtn.addActionListener(e -> {
-            int id = Integer.parseInt(idField.getText());
-            Student s = findStudent(id);
+            try {
+                int id = Integer.parseInt(idField.getText());
+                Student s = findStudent(id);
 
-            if (s != null) {
-                outputArea.setText(s.getReport());
-            } else {
-                outputArea.setText("Student not found!");
+                if (s != null) {
+                    outputArea.setText(s.getReport());
+                } else {
+                    outputArea.setText("❌ Student not found!");
+                }
+            } catch (Exception ex) {
+                outputArea.setText("❌ Enter valid ID!");
             }
         });
 
         deleteBtn.addActionListener(e -> {
-            int id = Integer.parseInt(idField.getText());
-            Student s = findStudent(id);
+            try {
+                int id = Integer.parseInt(idField.getText());
+                Student s = findStudent(id);
 
-            if (s != null) {
-                students.remove(s);
-                outputArea.setText("Student deleted!");
-            } else {
-                outputArea.setText("Student not found!");
+                if (s != null) {
+                    students.remove(s);
+                    outputArea.setText("🗑️ Student deleted!");
+                } else {
+                    outputArea.setText("❌ Student not found!");
+                }
+            } catch (Exception ex) {
+                outputArea.setText("❌ Enter valid ID!");
             }
         });
 
         viewAllBtn.addActionListener(e -> {
-            StringBuilder sb = new StringBuilder();
+            if (students.isEmpty()) {
+                outputArea.setText("⚠️ No students available!");
+                return;
+            }
 
+            StringBuilder sb = new StringBuilder();
             for (Student s : students) {
-                sb.append(s.getReport()).append("\n----------------\n");
+                sb.append(s.getReport()).append("\n-----------------\n");
             }
 
             outputArea.setText(sb.toString());
         });
 
         setVisible(true);
+    }
+
+    JButton createStyledButton(String text, Color bg, Color fg) {
+        JButton btn = new JButton(text);
+        btn.setBackground(bg);
+        btn.setForeground(fg);
+        btn.setFocusPainted(false);
+        return btn;
     }
 
     Student findStudent(int id) {
